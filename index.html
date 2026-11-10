@@ -79,6 +79,19 @@ button{font:inherit;color:inherit;border:0;background:none;padding:0;cursor:poin
 .pixel .t-sub,.pixel .t-small{font-weight:400;font-size:clamp(9px,2.4vh,13px);line-height:1.8}
 .pixel .btn{font-family:var(--pix);font-weight:400;font-size:clamp(11px,2.8vh,14px);border-radius:6px;padding:14px 20px}
 .row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.ov{overflow-y:auto}
+#intro .card{gap:10px}
+@media (max-height:500px){
+  #intro{align-content:start;padding-block:10px}
+  #intro .card{gap:7px}
+  #intro .t-big{font-size:clamp(24px,9vh,40px)!important}
+  #intro .t-sub{font-size:14px}
+  #intro .kick{font-size:11px}
+  #intro .legend{font-size:12px;gap:5px;max-width:640px}
+  #intro .legend span{padding:4px 9px;border-radius:10px}
+  #intro .t-small{font-size:11px}
+  #intro .btn{padding:10px 28px;font-size:16px}
+}
 .chipb{font-weight:700;font-size:13px;padding:7px 12px;border-radius:12px;background:rgba(27,16,48,.55);border:1.5px solid rgba(255,255,255,.45);color:#fff}
 .legend{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;font-size:13px;font-weight:600}
 .legend span{display:inline-block;background:rgba(0,0,0,.28);padding:6px 10px;border-radius:12px}
@@ -138,7 +151,7 @@ button{font:inherit;color:inherit;border:0;background:none;padding:0;cursor:poin
     <h2 class="t-big" style="font-size:clamp(30px,9vh,62px)" id="inTitle">ЧЕРНОГОРСК</h2>
     <p class="t-sub" id="inSub">Родной Чекаго. Где-то здесь — она.</p>
     <div class="legend" id="inLegend"></div>
-    <p class="t-small">Зомби побеждаются мячиком, ракеткой или прыжком сверху. На компьютере: стрелки, пробел, X и Z.</p>
+    <p class="t-small" id="inFoot"></p>
     <button class="btn" id="bGo">Поехали!</button>
   </div>
 </div>
@@ -1195,13 +1208,14 @@ function heartIcon(x,y,s){ctx.save();ctx.translate(x,y);ctx.scale(s,s);ctx.begin
 function showControls(on){const t=on&&TOUCH;$("#stickZone").hidden=!t;$("#stick").hidden=!t;$("#acts").hidden=!t;$("#topbtns").hidden=!on;if(t)placeStick(stickHome.x,stickHome.y);}
 function titleScene(){setLevel(0);newGame();G.hero.x=0;G.cam=380;G.hero.x=G.cam+VW*0.38;G.hero.face=1;G.fade=0;G.enemies.forEach(e=>e.dead=9);}
 const LEGEND=[
-  '<span>Стик слева: идти, вниз — присесть</span><span><b>Прыжок</b> — прыгнуть</span><span><b>Мячик</b> — пинг-понг издалека</span><span><b>Удар</b> — ракеткой вблизи</span>',
-  '<span>Стик слева: идти, вниз — присесть</span><span><b>Прыжок</b> — прыгнуть</span><span><b>Сюрикен</b> — бросок издалека</span><span><b>Удар</b> — сюрикеном вблизи</span><span>🚲 Велик — просто подъезжай к стоянке</span><span>🛵 Курьеров-зомби сбивай, от обычных уворачивайся</span>'];
+  '<span>Стик: идти, вниз — присесть</span><span><b>Прыжок</b></span><span><b>Мячик</b> — издалека</span><span><b>Удар</b> — ракеткой вблизи</span>',
+  '<span>Стик: идти, вниз — присесть</span><span><b>Прыжок</b></span><span><b>Сюрикен</b> — издалека</span><span><b>Удар</b> — вблизи</span><span>🚲 Велик — подъезжай к стоянке</span><span>🛵 Курьеров-зомби сбивай, от обычных уворачивайся</span>'];
+const FOOT=["Зомби побеждаются мячиком, ракеткой или прыжком сверху.","Зомби побеждаются сюрикеном или прыжком сверху."];
 function setButtons(){const sh=LV.weapon==="shuri";
   $(".ab.shoot").innerHTML=sh?'<svg viewBox="0 0 32 32"><path d="M16 3c2 5 3 8 9 9-5 2-8 3-9 9-2-5-3-8-9-9 5-2 8-3 9-9z" fill="#1d1d24" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/><circle cx="16" cy="12" r="2.4" fill="#fff"/></svg>Сюрикен':'<svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="8" fill="#fff4e0" stroke="#fff" stroke-width="2"/><circle cx="13" cy="13" r="2.5" fill="#fff"/></svg>Мячик';
   $(".ab.shoot").style.background=sh?"radial-gradient(circle at 35% 30%,#8a8fa8,#4a4e66 60%,#2a2d40)":"";}
 function start(lv,keep){setLevel(lv||0);newGame(keep);state="intro";$("#title").hidden=true;$("#done").hidden=true;
-  $("#inKick").textContent=LV.kick;$("#inTitle").textContent=LV.name;$("#inSub").textContent=LV.sub;$("#inLegend").innerHTML=LEGEND[LI];setButtons();
+  $("#inKick").textContent=LV.kick;$("#inTitle").textContent=LV.name;$("#inSub").textContent=LV.sub;$("#inLegend").innerHTML=LEGEND[LI];$("#inFoot").textContent=FOOT[LI]+(TOUCH?"":" На компьютере: стрелки, пробел, X и Z.");setButtons();
   G.cam=LI===1?0:0;$("#intro").hidden=false;}
 function go(){$("#intro").hidden=true;state="play";G.fade=.6;showControls(true);audio();}
 function togglePause(){
