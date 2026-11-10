@@ -468,13 +468,14 @@ function updateMeet(dt){
 const lerp=(a,b,k)=>a+(b-a)*k,ease=k=>k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
 function lerp2(a,b,k){k=ease(clamp(k,0,1));return[lerp(a[0],b[0],k),lerp(a[1],b[1],k)];}
 function throwPose(E){
-  const IDLE=[20,-40],CHEST=[3,-64],OUT=[22,-84],BACK=[-4,-110],FWD=[32,-104],WAVE=[26,-96];
-  if(E.phase!==2)return{};const t=E.t;
-  if(t<0.6)return{hand:lerp2(IDLE,CHEST,t/0.6)};
-  if(t<1.1)return{hand:lerp2(CHEST,OUT,(t-0.6)/0.5),heart:1};
-  if(t<1.45)return{hand:lerp2(OUT,BACK,(t-1.1)/0.35),heart:1};
-  if(t<1.65)return{hand:lerp2(BACK,FWD,(t-1.45)/0.2),heart:t<1.55};
-  return{hand:lerp2(FWD,WAVE,(t-1.65)/0.5)};}
+  if(E.phase!==2)return{arms:1};const t=E.t;
+  if(t<0.7)return{arms:1,over:1,front:armLerp(ARM.hang,ARM.chest,t/0.7)};
+  if(t<1.0)return{arms:1,over:1,front:ARM.chest,heart:t>0.85};
+  if(t<1.5)return{arms:1,over:1,front:armLerp(ARM.chest,ARM.out,(t-1.0)/0.5),heart:1};
+  if(t<1.85)return{arms:1,over:1,front:armLerp(ARM.out,ARM.low,(t-1.5)/0.35),heart:1};
+  if(t<2.15)return{arms:1,over:1,front:armLerp(ARM.low,ARM.toss,(t-1.85)/0.3),heart:t<2.0};
+  if(t<2.6)return{arms:1,over:1,front:ARM.toss};
+  return{arms:1,over:1,front:armLerp(ARM.toss,ARM.hang,(t-2.6)/0.8)};}
 function startEnding2(){G.ending={t:0,phase:0,herX:PRINCESS_X,herFace:1,trainV:0,trainOff:0,inTrain:false,heartX:0,heartY:0,heartOn:false};
   G.balls=[];G.couriers=[];G.hero.bike=false;G.hero.dash=0;G.hero.coffee=0;for(const k in keys)keys[k]=0;stick.x=stick.y=0;showControls(false);}
 function updateEnding2(dt){
@@ -486,11 +487,11 @@ function updateEnding2(dt){
   else if(E.phase===6){E.hug=Math.max(0,1-E.t*2);const d=door-h.x;if(Math.abs(d)>4){h.face=Math.sign(d);h.vx=170*h.face;h.x+=h.face*Math.min(Math.abs(d),170*dt);h.walkT+=170*dt*0.045;}else{h.vx=0;E.phase=1;E.t=0;E.inTrain=true;tone(520,.2,"triangle",.05);hideCaption();}}
   else if(E.phase===1){if(E.t>1.0){E.phase=2;E.t=0;tone(220,1.2,"sawtooth",.03,330);}}
   else if(E.phase===2){if(E.t>0.3){E.trainV=Math.min(420,E.trainV+90*dt);E.trainOff+=E.trainV*dt;}
-    if(E.t>0.6&&!E.pulled){E.pulled=true;tone(880,.25,"triangle",.05,1320);burst(PRINCESS_X+10,GROUND-80,"#ff86ad",10,"star");}
-    if(E.t>1.55&&!E.heartOn){E.heartOn=true;E.heartX=PRINCESS_X+30;E.heartY=GROUND-112;E.hvx=420;E.hvy=-460;SFX.swing();}
+    if(E.t>0.85&&!E.pulled){E.pulled=true;tone(880,.25,"triangle",.05,1320);burst(PRINCESS_X+2,GROUND-75,"#ff86ad",10,"star");}
+    if(E.t>2.0&&!E.heartOn){E.heartOn=true;E.heartX=PRINCESS_X+38;E.heartY=GROUND-110;E.hvx=380;E.hvy=-420;SFX.swing();}
     if(E.heartOn){E.hvy+=420*dt;const tx=door+E.trainOff,ty=GROUND-150;E.hvx+=(tx-E.heartX)*dt*2.2;E.heartX+=E.hvx*dt;E.heartY+=E.hvy*dt;if(E.heartY>ty)E.heartY=ty+(E.heartY-ty)*.9;}
-    if(E.t>1.9&&!E.capShown){E.capShown=true;caption("Я вырвала своё сердце и бросила его тебе");tone(660,.5,"triangle",.06);setTimeout(()=>tone(990,.6,"triangle",.05),300);}
-    if(E.t>6.8){E.phase=3;E.t=0;hideCaption();$("#blackText").textContent="В ближайшем будущем…";$("#black").classList.add("show");}}
+    if(E.t>2.3&&!E.capShown){E.capShown=true;caption("Я вырвала своё сердце и бросила его тебе");tone(660,.5,"triangle",.06);setTimeout(()=>tone(990,.6,"triangle",.05),300);}
+    if(E.t>7.2){E.phase=3;E.t=0;hideCaption();$("#blackText").textContent="В ближайшем будущем…";$("#black").classList.add("show");}}
   else if(E.phase===3){if(E.t>2.8){E.phase=4;finish();}}
 }
 
@@ -865,23 +866,25 @@ function drawZombie(e){
   else{ctx.fillStyle="#3a2e24";ctx.beginPath();ctx.moveTo(hx-20,hy-14);ctx.lineTo(hx-14,hy-28);ctx.lineTo(hx-4,hy-20);ctx.lineTo(hx+4,hy-30);ctx.lineTo(hx+12,hy-20);ctx.lineTo(hx+20,hy-26);ctx.lineTo(hx+21,hy-12);ctx.closePath();ctx.fill();}
   ctx.restore();
 }
-function ik(sx,sy,tx,ty,l1,l2,bend){let dx=tx-sx,dy=ty-sy,d=Math.hypot(dx,dy);if(d>l1+l2-0.5){const k=(l1+l2-0.5)/d;dx*=k;dy*=k;d=l1+l2-0.5;}
-  const a=Math.atan2(dy,dx),c=Math.acos(clamp((l1*l1+d*d-l2*l2)/(2*l1*d),-1,1));const ea=a+bend*c;return[[sx+Math.cos(ea)*l1,sy+Math.sin(ea)*l1],[sx+dx,sy+dy]];}
-function princessArm(sx,sy,hx,hy,bend,heart){const [e,hd]=ik(sx,sy,hx,hy,19,18,bend);
-  ctx.lineCap="round";ctx.lineJoin="round";ctx.strokeStyle="#d8d4ea";ctx.lineWidth=14;ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(e[0],e[1]);ctx.lineTo(hd[0],hd[1]);ctx.stroke();
-  ctx.strokeStyle=OL;ctx.lineWidth=11.5;ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(e[0],e[1]);ctx.lineTo(hd[0],hd[1]);ctx.stroke();
-  ctx.strokeStyle="#4a4a5c";ctx.lineWidth=8.5;ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(e[0],e[1]);ctx.lineTo(hd[0]-(hd[0]-e[0])*.2,hd[1]-(hd[1]-e[1])*.2);ctx.stroke();
-  ctx.strokeStyle="rgba(255,255,255,.22)";ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(sx,sy-2);ctx.lineTo(e[0],e[1]-2);ctx.stroke();
-  circ(hd[0],hd[1],6,"#f3cdb4",1.8);
-  if(heart){ctx.save();ctx.globalCompositeOperation="lighter";const g=ctx.createRadialGradient(hd[0],hd[1]-4,1,hd[0],hd[1]-4,26);g.addColorStop(0,"rgba(255,90,140,.7)");g.addColorStop(1,"rgba(255,90,140,0)");ctx.fillStyle=g;ctx.fillRect(hd[0]-26,hd[1]-30,52,52);ctx.restore();drawHeart(hd[0],hd[1]-6,0.42,0);}}
+/* natural arm: elbow and hand offsets from the shoulder, mirrored by side */
+function princessArm(sx,sy,side,el,hd,heart){
+  const ex=sx+side*el[0],ey=sy+el[1],hx=sx+side*hd[0],hy=sy+hd[1];
+  ctx.lineCap="round";ctx.lineJoin="round";
+  ctx.strokeStyle=OL;ctx.lineWidth=10.5;ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(ex,ey);ctx.lineTo(hx,hy);ctx.stroke();
+  ctx.strokeStyle="#3c3c4c";ctx.lineWidth=7.5;ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(ex,ey);ctx.lineTo(hx-(hx-ex)*.22,hy-(hy-ey)*.22);ctx.stroke();
+  ctx.strokeStyle="rgba(255,255,255,.16)";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(sx-side,sy);ctx.lineTo(ex-side,ey);ctx.stroke();
+  circ(hx,hy,5,"#f3cdb4",1.6);
+  if(heart){ctx.save();ctx.globalCompositeOperation="lighter";const g=ctx.createRadialGradient(hx,hy-6,1,hx,hy-6,24);g.addColorStop(0,"rgba(255,90,140,.7)");g.addColorStop(1,"rgba(255,90,140,0)");ctx.fillStyle=g;ctx.fillRect(hx-24,hy-30,48,48);ctx.restore();drawHeart(hx,hy-9,0.4,0);}
+  return[hx,hy];}
+const ARM={hang:[[3,18],[5,35]],chest:[[5,17],[-11,8]],out:[[8,16],[20,4]],low:[[6,17],[14,30]],toss:[[14,-9],[28,-20]]};
+function armLerp(a,b,k){k=clamp(k,0,1);k=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;const L=(p,q)=>[p[0]+(q[0]-p[0])*k,p[1]+(q[1]-p[1])*k];return[L(a[0],b[0]),L(a[1],b[1])];}
+function umbrellaTilted(hx,hy,cx,cy,r,col){ctx.save();ctx.strokeStyle="#2a2a33";ctx.lineWidth=2.4;ctx.beginPath();ctx.moveTo(hx,hy);ctx.lineTo(cx,cy);ctx.stroke();
+  ctx.translate(cx,cy);ctx.rotate(Math.atan2(cx-hx,hy-cy));umbrella(0,r*1.1,r,col);ctx.restore();}
 function drawPrincess(x,face,walkT,pose){
   pose=pose||{};const f=face>0?1:-1;
   const y=GROUND;ctx.save();
   ctx.fillStyle="rgba(40,10,40,.25)";ctx.beginPath();ctx.ellipse(x,GROUND+2,20,5,0,0,Math.PI*2);ctx.fill();
   const sw=walkT?Math.sin(walkT*8)*0.4:0,SW=66,SH=110,top=y-132;
-  /* back arm (behind body) */
-  {const sx=x-f*14,sy=y-73;const sw2=walkT?Math.sin(walkT*8)*10:0;
-   const t=pose.umb?[x-f*13,y-104]:[x-f*20-sw2*f,y-40];princessArm(sx,sy,t[0],t[1],pose.umb?f:-f,false);}
   /* legs + boots */
   const leg=(a,o)=>{ctx.save();ctx.translate(x+o,y-44);ctx.rotate(a);fillRR(-4.5,0,9,18,4,"#3a3a46",1.5);fillRR(-5.5,16,11,28,4,"#17171c",2);fillRR(-6.5+(face>0?2:-2),38,15,7,3,"#0d0d10",1.5);ctx.restore();};
   leg(sw,-5);leg(-sw,5);
@@ -891,11 +894,15 @@ function drawPrincess(x,face,walkT,pose){
   for(const d of [-1,1]){ctx.beginPath();ctx.moveTo(x+d*19,y-42);ctx.lineTo(x+d*6,y-42);ctx.lineTo(x+d*5,y-64);ctx.lineTo(x+d*9,y-77);ctx.lineTo(x+d*17,y-77);ctx.closePath();ctx.fill();ctx.lineWidth=2;ctx.strokeStyle=OL;ctx.stroke();}
   ctx.fillStyle="#26262e";ctx.fillRect(x-19,y-50,38,8);ctx.lineWidth=2;ctx.strokeStyle=OL;ctx.strokeRect(x-19,y-50,38,8);
   ctx.fillStyle="rgba(255,255,255,.18)";ctx.fillRect(x-15,y-74,3,22);
+  /* arms: only at the station (pose.arms) */
+  if(pose.arms){const f=face>0?1:-1,bs=-f,fs=f;
+    const bsx=x+bs*13,bsy=y-74;const hb=[bsx+bs*11,bsy+6];
+    umbrellaTilted(hb[0],hb[1],x+bs*30,y-160,40,"#1b1b22");
+    princessArm(bsx,bsy,bs,[3,17],[11,6],false);
+    if(!pose.over){const fk=pose.front||ARM.hang;princessArm(x+fs*13,y-74,fs,fk[0],fk[1],!!pose.heart);}}
   /* head, neck and long hair from her photo */
   if(imgHer.complete){ctx.save();ctx.translate(x,top);if(face>0)ctx.scale(-1,1);ctx.shadowColor="rgba(40,10,40,.35)";ctx.shadowBlur=5;ctx.shadowOffsetY=2;ctx.drawImage(imgHer,-SW/2,0,SW,SH);ctx.restore();}
-  /* front arm (over the hair) */
-  {const sx=x+f*14,sy=y-73;const sw2=walkT?Math.sin(walkT*8)*10:0;
-   const h=pose.hand?[x+f*pose.hand[0],y+pose.hand[1]]:[x+f*20+sw2*f,y-40];princessArm(sx,sy,h[0],h[1],pose.hand&&pose.hand[1]<-70?-f:f,!!pose.heart);}
+  if(pose.arms&&pose.over){const fs=face>0?1:-1,fk=pose.front||ARM.hang;princessArm(x+fs*13,y-74,fs,fk[0],fk[1],!!pose.heart);}
   /* small crown */
   const cy=top+5;
   ctx.fillStyle=lg(0,cy-13,0,cy,["#fff1a0","#ffc21f"]);ctx.beginPath();ctx.moveTo(x-11,cy);ctx.lineTo(x-11,cy-10);ctx.lineTo(x-5,cy-5);ctx.lineTo(x,cy-13);ctx.lineTo(x+5,cy-5);ctx.lineTo(x+11,cy-10);ctx.lineTo(x+11,cy);ctx.closePath();ctx.fill();ctx.lineWidth=1.8;ctx.strokeStyle=OL;ctx.stroke();
@@ -1190,9 +1197,9 @@ function render(){
   if(state==="title"){drawPrincess(G.cam+VW*0.62,-1,0);drawHeart(G.cam+VW*0.5,GROUND-210+Math.sin(G.t*2)*6,1.1,0);}
   else if(LI===1){
     const M=G.meet;
-    if(M){ctx.save();ctx.globalAlpha=M.fade;drawPrincess(M.herX,M.herFace,M.phase===3?G.t:0,{umb:1,hand:(M.phase===1||M.phase===2)?[22,-112+Math.sin(G.t*9)*7]:null});umbrella(M.herX+(M.herFace>0?-13:13),GROUND-104,40,"#1b1b22");ctx.restore();if(M.heart>0)drawHeart((G.hero.x+M.herX)/2,GROUND-215-M.heart*14,0.7+M.heart*0.5,0);}
-    else if(!G.met){drawPrincess(LV.meet[1],-1,0,{umb:1});umbrella(LV.meet[1]+13,GROUND-104,40,"#1b1b22");}
-    else{const hx=E?E.herX:PRINCESS_X;drawPrincess(hx,E?1:-1,0,Object.assign({umb:1},E?throwPose(E):{}));umbrella(hx+(E?-13:13),GROUND-104,40,"#1b1b22");}
+    if(M){ctx.save();ctx.globalAlpha=M.fade;drawPrincess(M.herX,M.herFace,M.phase===3?G.t:0);umbrella(M.herX+(M.herFace>0?-14:14),GROUND-118,40,"#1b1b22");ctx.restore();if(M.heart>0)drawHeart((G.hero.x+M.herX)/2,GROUND-215-M.heart*14,0.7+M.heart*0.5,0);}
+    else if(!G.met){drawPrincess(LV.meet[1],-1,0);umbrella(LV.meet[1]+14,GROUND-118,40,"#1b1b22");}
+    else{const hx=E?E.herX:PRINCESS_X;drawPrincess(hx,E?1:-1,0,E?throwPose(E):{arms:1});}
     if(E&&E.heartOn){drawHeart(E.heartX,E.heartY,0.7,0);}
     if(E&&E.hug>0)drawHeart(PRINCESS_X-40,GROUND-205,0.55*E.hug,0);
   }
