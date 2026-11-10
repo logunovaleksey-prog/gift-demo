@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#120a24">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -36,6 +36,7 @@
 }
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;background:#120a24;color:var(--ink);overflow:hidden;overscroll-behavior:none}
+html,body,#game,#stickZone,.acts,.ab,.stick{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 body{font-family:var(--f);-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;touch-action:none;-webkit-touch-callout:none}
 [hidden]{display:none!important}
 button{font:inherit;color:inherit;border:0;background:none;padding:0;cursor:pointer}
@@ -312,7 +313,15 @@ addEventListener("keydown",e=>{const k=KMAP[e.code];if(k){keys[k]=1;e.preventDef
 addEventListener("keyup",e=>{const k=KMAP[e.code];if(k)keys[k]=0;});
 addEventListener("blur",()=>{for(const k in keys)keys[k]=0;stick.x=stick.y=0;if(state==="play")togglePause();});
 document.addEventListener("visibilitychange",()=>{if(document.hidden&&state==="play")togglePause();});
-document.addEventListener("gesturestart",e=>e.preventDefault());
+/* iPhone: block pinch-zoom and double-tap zoom (Safari ignores user-scalable=no) */
+["gesturestart","gesturechange","gestureend"].forEach(t=>document.addEventListener(t,e=>e.preventDefault(),{passive:false}));
+document.addEventListener("touchmove",e=>{if(e.touches.length>1||(e.scale!==undefined&&e.scale!==1))e.preventDefault();},{passive:false});
+let lastTouchEnd=0;
+document.addEventListener("touchend",e=>{const now=Date.now();if(now-lastTouchEnd<350&&!e.target.closest(".btn,.chipb,.ib"))e.preventDefault();lastTouchEnd=now;},{passive:false});
+document.addEventListener("dblclick",e=>e.preventDefault(),{passive:false});
+/* if the page still got zoomed, snap it back */
+function unzoom(){const m=document.querySelector('meta[name="viewport"]');if(!m)return;const c=m.getAttribute("content");m.setAttribute("content",c.replace(/,?\s*maximum-scale=[\d.]+/,"")+", maximum-scale=1");setTimeout(()=>m.setAttribute("content",c),300);}
+if(window.visualViewport)visualViewport.addEventListener("resize",()=>{if(visualViewport.scale>1.02)unzoom();});
 
 /* ================= PHYSICS ================= */
 function groundAt(x){for(const [a,b] of GROUND_SEGS)if(x>=a&&x<=b)return true;return false;}
