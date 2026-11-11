@@ -218,7 +218,7 @@ const LEVELS=[
     {x:3140,y:380,w:150,h:56,k:"cartHigh"},{x:3360,y:310,w:150,h:56,k:"cartHigh"},{x:3580,y:380,w:150,h:56,k:"cartHigh"},{x:5020,y:412,w:120,h:48,k:"bench"},{x:5560,y:380,w:110,h:24,k:"plank"}],
   cps:[120,2450,4700],
   enemies:[[900,"walk"],[1700,"walk"],[2150,"walk"],[2480,"drunk"],[3300,"walk"],[3800,"walk"],[4850,"drunk"],[5250,"walk"],[5450,"drunk"],[5950,"walk"],[6180,"drunk"]],
-  bonuses:[[640,400,"beer"],[1250,400,"cig"],[1526,320,"racket"],[1950,400,"beer"],[2695,360,"cig"],[3215,330,"beer"],[3435,260,"cig"],[3655,330,"beer"],[4560,400,"snow"],[5080,360,"cig"],[5615,330,"beer"],[6020,400,"cig"]],
+  bonuses:[[640,400,"beer"],[1250,400,"cig"],[1526,320,"racket"],[1950,400,"cig"],[2695,360,"cig"],[3215,330,"beer"],[3435,260,"cig"],[3655,330,"beer"],[4560,400,"snow"],[5080,360,"cig"],[5615,330,"beer"],[6020,400,"cig"]],
   bowl:4300,princess:6900,poles:[380,620],theme:"sunset",weapon:"pp",hud:["beer","cig"],pit:"Упал в угольную яму!",
   doneTitle:"Черногорск позади",next:"Дальше: <b>Уровень 2 · Москва</b> — «Прошло 7 лет…»"},
  {name:"МОСКВА",kick:"Уровень 2 · Прошло 7 лет",sub:"Ночная Москва. Где-то здесь — снова она.",world:9200,
@@ -286,12 +286,15 @@ const SFX={
 const MEL=[659,0,784,659,587,0,523,587,659,0,523,0,440,0,0,0,587,0,698,587,523,0,494,523,587,0,494,0,392,0,0,0];
 const BASS=[131,131,196,196,175,175,131,131,147,147,196,196,165,165,98,98];
 let mStep=0,mTimer=0;
-function musicTick(dt){if(!AC||!soundOn||LI===1)return;mTimer-=dt;if(mTimer>0)return;mTimer=.16;
+function musicTick(dt){return;if(!AC||!soundOn)return;mTimer-=dt;if(mTimer>0)return;mTimer=.16;
   const m=MEL[mStep%MEL.length];if(m)tone(m,.14,"triangle",.03);if(mStep%2===0)tone(BASS[(mStep/2|0)%BASS.length],.28,"square",.02);mStep++;}
-const bgm=new Audio();bgm.loop=true;bgm.volume=.6;bgm.preload="none";let bgmTry=0;
-function bgmWant(){return soundOn&&LI===1&&state==="play"&&!document.hidden;}
+try{if(navigator.audioSession)navigator.audioSession.type="playback";}catch(e){}
+const TRACKS=["music-chernogorsk.mp3","music-moscow.mp3","music-piter.mp3"];
+const bgm=new Audio();bgm.loop=true;bgm.volume=.6;bgm.preload="none";let bgmTry=0,bgmLv=-1;
+function bgmWant(){return soundOn&&state==="play"&&!document.hidden;}
+function bgmSet(){if(bgmLv!==LI){bgmLv=LI;bgm.src=TRACKS[LI];}}
 function bgmSync(force){const want=bgmWant();
-  if(want&&bgm.paused){const now=Date.now();if(force||now-bgmTry>1500){bgmTry=now;if(!bgm.src)bgm.src="music-moscow.mp3";bgm.play().catch(()=>{});}}
+  if(want&&(bgm.paused||bgmLv!==LI)){const now=Date.now();if(force||now-bgmTry>1500){bgmTry=now;bgmSet();bgm.play().catch(()=>{});}}
   else if(!want&&!bgm.paused)bgm.pause();}
 function soundIcon(){$("#bSound").innerHTML=soundOn?'<svg viewBox="0 0 24 24" fill="#fff"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 8a5 5 0 0 1 0 8M18.5 5.5a8.5 8.5 0 0 1 0 13" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></svg>':'<svg viewBox="0 0 24 24" fill="#fff"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="m16 9 6 6m0-6-6 6" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg>';}
 
@@ -694,7 +697,7 @@ function lyceum(x){
     ctx.strokeStyle="#222";ctx.lineWidth=2;ctx.strokeRect(wx-10,wy-6,8,6);ctx.strokeRect(wx+2,wy-6,8,6);
     const bx=wx-160,by=wy-98;fillRR(bx,by,240,60,16,"#fff",2.5);
     ctx.fillStyle="#fff";ctx.beginPath();ctx.moveTo(wx-32,by+58);ctx.lineTo(wx-8,by+58);ctx.lineTo(wx-6,wy-16);ctx.fill();
-    text("Сергей Васильевич:",bx+120,by+19,13,"#ff4f86",800);text("Дима, домашку сделал?!",bx+120,by+40,16,"#1b1030",800);}
+    text("Сергей Васильевич:",bx+120,by+19,13,"#ff4f86",800);text("Ты чё, куришь?!",bx+120,by+40,18,"#1b1030",800);}
 }
 function bowling(x){
   const w=560,h=170,y=GROUND-h;
@@ -867,7 +870,7 @@ function drawHero(h,alpha){
   else{const a=h.shotT>0?-1.5*f:sw*0.8;ctx.save();ctx.translate(x+f*11,ty+10);ctx.rotate(a);fillRR(-6,-2,12,18,6,"#262d45",2);fillRR(-5,13,10,16*cr,5,"#efc3a0",2);ctx.restore();
     const px=x+f*11-Math.sin(a)*32,py=ty+10+Math.cos(a)*32*cr;heldItem(px,py,a+(f>0?0.6:-0.6),0.95);}
   /* head (photo cut-out, no neck) */
-  const himg=LI===1?imgCap:imgDima,hw=LI===1?68:64,hh2=himg.naturalWidth?hw*himg.naturalHeight/himg.naturalWidth:84;
+  const himg=LI===1?imgCap:imgDima,hw=LI===1?56:54,hh2=himg.naturalWidth?hw*himg.naturalHeight/himg.naturalWidth:84;
   const hy=ty+8-hh2+(run?-Math.abs(Math.sin(h.walkT*1.6))*3:0);
   ctx.save();ctx.translate(x+f*2,hy+hh2/2);if(h.wobble>0)ctx.rotate(Math.sin(G.t*6)*0.16);
   ctx.shadowColor="rgba(40,10,40,.45)";ctx.shadowBlur=6;ctx.shadowOffsetY=3;
@@ -930,7 +933,7 @@ function drawPrincess(x,face,walkT,pose){
   pose=pose||{};const f=face>0?1:-1;
   const y=GROUND;ctx.save();
   ctx.fillStyle="rgba(40,10,40,.25)";ctx.beginPath();ctx.ellipse(x,GROUND+2,20,5,0,0,Math.PI*2);ctx.fill();
-  const sw=walkT?Math.sin(walkT*8)*0.4:0,SW=66,SH=110,top=y-132;
+  const sw=walkT?Math.sin(walkT*8)*0.4:0,SW=88,SH=147,top=y-155;
   /* legs + boots */
   const leg=(a,o)=>{ctx.save();ctx.translate(x+o,y-44);ctx.rotate(a);fillRR(-4.5,0,9,18,4,"#3a3a46",1.5);fillRR(-5.5,16,11,28,4,"#17171c",2);fillRR(-6.5+(face>0?2:-2),38,15,7,3,"#0d0d10",1.5);ctx.restore();};
   leg(sw,-5);leg(-sw,5);
@@ -1220,7 +1223,7 @@ function umbrella(x,y,r,col){ctx.save();ctx.strokeStyle="#333";ctx.lineWidth=2;c
 
 /* ================= PITER: logic ================= */
 const BRIDGES=[{a0:7300,a1:7800},{a0:8000,a1:8500},{a0:8700,a1:9200}];
-const BRIDGE_TIMES=[8,12,16],TIMER_START=7150,TIMER_END=9230;
+const BRIDGE_TIMES=[2.2,4.6,7.0],TIMER_START=7150,TIMER_END=9230;
 function resetBridges(){G.bridges=BRIDGES.map(b=>({a0:b.a0,a1:b.a1,c:(b.a0+b.a1)/2,L:(b.a1-b.a0)/2,ang:0,gap:0}));G.timer={on:false,t:0,done:false};}
 function bridgeGapAt(x){if(LI!==2||!G||!G.bridges)return false;for(const b of G.bridges)if(b.gap>0&&Math.abs(x-b.c)<b.gap)return true;return false;}
 function updatePiter(dt){
@@ -1243,9 +1246,9 @@ function updatePiter(dt){
   if(h.glasses>0)h.glasses-=dt;if(h.vr>0){h.vr-=dt;h.inv=Math.max(h.inv,.2);}
   /* bridges timer */
   const T=G.timer;
-  if(!T.on&&!T.done&&h.x>TIMER_START&&h.x<TIMER_END){T.on=true;T.t=0;caption("Мосты разводят! Успей!");setTimeout(hideCaption,1600);tone(440,.3,"square",.05);}
+  if(!T.on&&!T.done&&h.x>TIMER_START&&h.x<TIMER_END){T.on=true;T.t=0;caption("Мосты разводят! Успей!");setTimeout(hideCaption,900);tone(440,.3,"square",.05);}
   if(T.on){T.t+=dt;
-    G.bridges.forEach((b,i)=>{const raiseAt=BRIDGE_TIMES[i];if(T.t>raiseAt){b.ang=Math.min(1.15,b.ang+dt*0.45);b.gap=b.L*(1-Math.cos(b.ang))+(b.ang>0.04?14:0);}
+    G.bridges.forEach((b,i)=>{const raiseAt=BRIDGE_TIMES[i];if(T.t>raiseAt){if(b.ang===0){G.shake=.4;tone(140,.5,"sawtooth",.05,90);}b.ang=Math.min(1.15,b.ang+dt*0.6);b.gap=b.L*(1-Math.cos(b.ang))+(b.ang>0.04?14:0);}
       if(T.t>raiseAt-3&&T.t<raiseAt&&Math.floor(T.t*4)!==Math.floor((T.t-dt)*4))tone(900,.06,"square",.03);});
     if(h.x>TIMER_END){T.on=false;T.done=true;pop(h.x,GROUND-170,"Успел!","#3ddc97");SFX.power();}}
   /* boss */
@@ -1462,7 +1465,7 @@ function drawWhip(h){const k=1-h.whipT/.22,f=h.face,sx=h.x+f*16,sy=h.y-(h.crouch
   ctx.strokeStyle="rgba(255,255,255,.35)";ctx.lineWidth=1;ctx.stroke();
   if(k>.55){ctx.globalAlpha=Math.min(1,(1-k)*3);ctx.strokeStyle="#fff6c0";ctx.lineWidth=2.5;for(let i=0;i<6;i++){const a=i*Math.PI/3;ctx.beginPath();ctx.moveTo(tx+Math.cos(a)*6,ty+Math.sin(a)*6);ctx.lineTo(tx+Math.cos(a)*16,ty+Math.sin(a)*16);ctx.stroke();}}
   ctx.restore();fillRR(sx-4,sy-4,8,16,3,"#3a2418",1.5);}
-function suitcase(x){fillRR(x-17,GROUND-46,34,40,6,lg(x-17,0,x+17,0,["#ff8ab8","#e8558f"]),2);ctx.fillStyle="rgba(255,255,255,.35)";ctx.fillRect(x-11,GROUND-42,4,32);
+function suitcase(x){fillRR(x-17,GROUND-46,34,40,6,lg(x-17,0,x+17,0,["#ffffff","#dfe2ea"]),2);ctx.fillStyle="rgba(180,186,200,.5)";ctx.fillRect(x-11,GROUND-42,4,32);
   ctx.strokeStyle="#2a2430";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x-7,GROUND-46);ctx.lineTo(x-7,GROUND-62);ctx.lineTo(x+7,GROUND-62);ctx.lineTo(x+7,GROUND-46);ctx.stroke();
   circ(x-11,GROUND-3,3.5,"#222");circ(x+11,GROUND-3,3.5,"#222");}
 function moneyIcon(s){ctx.save();ctx.scale(s,s);ctx.rotate(-0.15);fillRR(-20,-6,40,20,3,"#6aa86a",1.8);fillRR(-22,-12,40,20,3,lg(-22,0,18,0,["#9be07f","#5ab05a"]),2);circ(-2,-2,6,"#d8f5c8",1.2);text("₽",-2,-2,10,"#2f6e3e",900);ctx.restore();}
@@ -1470,7 +1473,9 @@ function wineIcon(s){ctx.save();ctx.scale(s,s);ctx.beginPath();ctx.moveTo(-11,-1
   ctx.beginPath();ctx.moveTo(-10,-10);ctx.lineTo(10,-10);ctx.quadraticCurveTo(10,2,0,3);ctx.quadraticCurveTo(-10,2,-10,-10);ctx.fillStyle="#a01838";ctx.fill();
   ctx.strokeStyle=OL;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,4);ctx.lineTo(0,16);ctx.moveTo(-8,17);ctx.lineTo(8,17);ctx.stroke();circ(-5,-13,2,"rgba(255,255,255,.8)");ctx.restore();}
 function glassesIcon(s){ctx.save();ctx.scale(s,s);ctx.strokeStyle=OL;ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(-4,-2);ctx.quadraticCurveTo(0,-6,4,-2);ctx.stroke();
-  fillRR(-22,-8,18,13,5,"#1b1b26",2);fillRR(4,-8,18,13,5,"#1b1b26",2);ctx.fillStyle="rgba(127,249,255,.6)";ctx.fillRect(-19,-6,5,4);ctx.fillRect(7,-6,5,4);ctx.restore();}
+  for(const lx of [-13,13]){ctx.beginPath();ctx.ellipse(lx,-1,9.5,7.5,0,0,Math.PI*2);ctx.fillStyle="rgba(210,235,255,.22)";ctx.fill();ctx.lineWidth=2.2;ctx.strokeStyle="#2a2430";ctx.stroke();
+    ctx.strokeStyle="rgba(255,255,255,.85)";ctx.lineWidth=1.6;ctx.beginPath();ctx.arc(lx,-1,6,Math.PI*1.1,Math.PI*1.45);ctx.stroke();ctx.beginPath();ctx.arc(lx,-1,3.5,Math.PI*1.15,Math.PI*1.4);ctx.stroke();}
+  ctx.restore();}
 function vrIcon(s){ctx.save();ctx.scale(s,s);fillRR(-22,-12,44,24,9,lg(0,-12,0,12,["#f4f4f8","#b8bccb"]),2);fillRR(-17,-6,34,10,4,"#1b1d2a");ctx.fillStyle="#7ff9ff";ctx.fillRect(-13,-4,10,5);ctx.fillRect(3,-4,10,5);ctx.strokeStyle="#2a2d40";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(-22,0);ctx.lineTo(-28,0);ctx.moveTo(22,0);ctx.lineTo(28,0);ctx.stroke();ctx.restore();}
 function drawDancer(e){
   const x=e.x,y=e.y,f=e.vx>=0?1:-1,v=e.v;
@@ -1632,7 +1637,7 @@ function setButtons(){const sh=LV.weapon==="shuri";
 function start(lv,keep){setLevel(lv||0);newGame(keep);state="intro";$("#title").hidden=true;$("#done").hidden=true;
   $("#inKick").textContent=LV.kick;$("#inTitle").textContent=LV.name;$("#inSub").textContent=LV.sub;$("#inLegend").innerHTML=LEGEND[LI];$("#inFoot").textContent=FOOT[LI]+(TOUCH?"":" На компьютере: стрелки, пробел, X и Z.");setButtons();
   G.cam=LI===1?0:0;$("#intro").hidden=false;}
-function go(){$("#intro").hidden=true;state="play";G.fade=.6;showControls(true);audio();if(LI===1){bgm.currentTime=0;}bgmSync(true);}
+function go(){$("#intro").hidden=true;state="play";G.fade=.6;showControls(true);audio();bgmSet();try{bgm.currentTime=0;}catch(e){}bgmSync(true);}
 function togglePause(){
   if(state==="play"&&!G.ending){state="pause";$("#pause").hidden=false;for(const k in keys)keys[k]=0;}
   else if(state==="pause"){state="play";$("#pause").hidden=true;last=performance.now();bgmSync(true);}
